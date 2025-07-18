@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duty Roster Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for transitions and minor adjustments */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+        .hidden {
+            display: none;
+        }
+        .completed-task {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="flex items-center justify-center min-h-screen">
+        <div class="text-xl font-medium text-gray-600">Loading...</div>
+    </div>
+
+    <!-- Login Page -->
+    <div id="login-page" class="hidden flex-col items-center justify-center min-h-screen p-4">
+        <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
+            <div class="text-center">
+                <h1 class="text-3xl font-bold text-gray-800">Duty Roster Login</h1>
+                <p class="text-gray-500">Please sign in with your email and password</p>
+            </div>
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="email" class="text-sm font-bold text-gray-600 block">Email</label>
+                    <input type="email" id="email" name="email" class="w-full p-3 mt-1 text-gray-800 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" autocomplete="email" required>
+                </div>
+                <div>
+                    <label for="password" class="text-sm font-bold text-gray-600 block">Password</label>
+                    <input type="password" id="password" name="password" class="w-full p-3 mt-1 text-gray-800 bg-gray-100 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" autocomplete="current-password" required>
+                </div>
+                <p id="login-error" class="text-sm text-center text-red-500"></p>
+                <div>
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Sign in
+                    </button>
+                </div>
+            </form>
+        </div>
+        <p class="text-center text-sm text-gray-500 mt-6">
+            © 2025 • Design & Code by NsRao
+        </p>
+    </div>
+
+    <!-- Main Application Page (Initially Hidden) -->
+    <div id="app-page" class="hidden flex flex-col min-h-screen">
+        <main class="flex-grow">
+            <div class="p-2 sm:p-4">
+                <div class="max-w-full mx-auto">
+                    <!-- Header -->
+                    <header class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                        <h1 class="text-xl sm:text-2xl font-bold text-gray-700 text-center sm:text-left">Taj Aravali Team IT Duty Roster</h1>
+                        <div class="flex items-center gap-2 flex-wrap justify-center">
+                            <button id="auto-schedule-btn" class="flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm shadow-sm">
+                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                Auto-schedule
+                            </button>
+                            <button id="export-xlsx-btn" disabled class="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                <span id="xlsx-btn-text">Loading...</span>
+                            </button>
+                            <button id="export-pdf-btn" disabled class="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                <span id="pdf-btn-text">Loading...</span>
+                            </button>
+                            <button id="settings-btn" class="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-gray-700 hover:bg-gray-100 transition-colors text-sm">
+                                Settings
+                            </button>
+                            <button id="logout-btn" class="px-4 py-2 bg-gray-600 text-white rounded-lg shadow-sm hover:bg-gray-700 transition-colors text-sm">
+                                Logout
+                            </button>
+                        </div>
+                    </header>
+
+                    <!-- Month Navigation -->
+                    <div class="flex items-center justify-center gap-4 mb-4 p-2 bg-white rounded-lg shadow-sm border border-gray-200">
+                        <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                        <h2 id="month-year-header" class="text-xl font-semibold w-48 text-center"></h2>
+                        <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                    </div>
+
+                    <!-- Roster Grid -->
+                    <div id="roster-grid" class="overflow-x-auto bg-white rounded-lg shadow-md border border-gray-200">
+                         <div class="flex items-center justify-center h-64"><div class="text-xl font-medium text-gray-600">Loading Roster...</div></div>
+                    </div>
+
+                    <!-- Bottom Section -->
+                    <div class="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Important Points Section -->
+                        <div id="points-section" class="lg:col-span-2">
+                            <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 h-full">
+                                <h3 class="text-xl font-bold text-gray-700 mb-4">Important Points & Follow-ups</h3>
+                                <div id="add-point-container" class="flex gap-2 mb-4">
+                                    <input type="text" id="new-point-input" class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" placeholder="Add a new point...">
+                                    <button id="add-point-btn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex-shrink-0">Add Point</button>
+                                </div>
+                                <ul id="points-list" class="space-y-3">
+                                    <!-- Points will be rendered here -->
+                                </ul>
+                            </div>
+                        </div>
+                        <!-- On Duty Now Widget -->
+                        <div id="on-duty-widget">
+                            <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 h-full">
+                                <h3 class="text-xl font-bold text-gray-700 mb-4">Who's On Duty Now?</h3>
+                                <div id="on-duty-list" class="space-y-3">
+                                    <!-- On-duty staff will be rendered here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <footer class="flex-shrink-0">
+             <p class="text-center text-sm text-gray-500 py-4">
+                © 2025 • Design & Code by NsRao
+            </p>
+        </footer>
+
+        <!-- Duty Selection Popover -->
+        <div id="duty-popover" class="fixed inset-0 bg-black bg-opacity-30 z-40 hidden modal-backdrop">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div id="duty-popover-content" class="bg-white rounded-lg shadow-2xl p-4 w-64 modal-content"></div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden modal-backdrop">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 modal-content">
+                <div class="p-6 border-b sticky top-0 bg-white z-10 flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-800">Settings</h2>
+                    <button id="close-settings-btn" class="p-2 rounded-full text-gray-500 hover:bg-gray-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <div class="p-6 space-y-8">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700">Manage Employees</h3>
+                        <div id="employee-list" class="space-y-3"></div>
+                        <button id="add-employee-btn" class="mt-3 flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="17" y1="11" x2="23" y2="11"></line></svg>
+                            Add Employee
+                        </button>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700">Manage Duty Types</h3>
+                        <div id="duty-type-list" class="space-y-3"></div>
+                        <button id="add-duty-type-btn" class="mt-3 flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Add Duty Type
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden modal-backdrop">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 modal-content">
+                <h3 id="confirm-title" class="text-lg font-bold text-gray-800"></h3>
+                <p id="confirm-message" class="text-sm text-gray-600 mt-2"></p>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button id="confirm-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancel</button>
+                    <button id="confirm-ok-btn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let db, auth, appId;
+        let currentDate = new Date();
+        let employees = ['Khushwant', 'Kunal', 'Suryaveer', 'Sahil'];
+        let dutyTypes = [
+            { code: 'M', color: '#3b82f6', name: 'Morning' },
+            { code: 'G1', color: '#22c55e', name: 'General 1' },
+            { code: 'G2', color: '#8b5cf6', name: 'General 2' },
+            { code: 'A', color: '#f97316', name: 'Afternoon' },
+            { code: 'OFF', color: '#6b7280', name: 'Off' },
+        ];
+        let duties = {};
+        let followUpPoints = [];
+        let rosterDocId = null;
+        let selectedCell = null;
+        let currentUserRole = null; // 'admin' or 'viewer'
+        let onDutyInterval;
+
+        const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const loginPage = document.getElementById('login-page');
+        const appPage = document.getElementById('app-page');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const logoutBtn = document.getElementById('logout-btn');
+        
+        const rosterGrid = document.getElementById('roster-grid');
+        const monthYearHeader = document.getElementById('month-year-header');
+        const dutyPopover = document.getElementById('duty-popover');
+        const dutyPopoverContent = document.getElementById('duty-popover-content');
+        const settingsBtn = document.getElementById('settings-btn');
+        const autoScheduleBtn = document.getElementById('auto-schedule-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const employeeList = document.getElementById('employee-list');
+        const dutyTypeList = document.getElementById('duty-type-list');
+        const pointsList = document.getElementById('points-list');
+        const newPointInput = document.getElementById('new-point-input');
+        const addPointContainer = document.getElementById('add-point-container');
+        const onDutyList = document.getElementById('on-duty-list');
+        const confirmModal = document.getElementById('confirm-modal');
+
+        const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+        
+        const updateFirestore = async (data) => {
+            if (currentUserRole !== 'admin') return; 
+            if (!db || !rosterDocId) return;
+            const rosterRef = doc(db, `artifacts/${appId}/public/data/duty-rosters`, rosterDocId);
+            try {
+                const docSnap = await getDoc(rosterRef);
+                if (docSnap.exists()) {
+                    await updateDoc(rosterRef, data);
+                } else {
+                    const fullData = {
+                        year: currentDate.getFullYear(),
+                        month: currentDate.getMonth(),
+                        employees, dutyTypes, duties, followUpPoints, ...data
+                    };
+                    await setDoc(rosterRef, fullData);
+                }
+            } catch (error) {
+                console.error("Error updating Firestore:", error);
+            }
+        };
+
+        const render = () => {
+            renderRoster();
+            renderSettings();
+            renderFollowUpPoints();
+            renderOnDutyNow();
+            updateUIAccess();
+        };
+        
+        const updateUIAccess = () => {
+            const isViewer = currentUserRole === 'viewer';
+            settingsBtn.classList.toggle('hidden', isViewer);
+            autoScheduleBtn.classList.toggle('hidden', isViewer);
+            addPointContainer.classList.toggle('hidden', isViewer);
+        };
+
+        const renderRoster = () => {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            monthYearHeader.textContent = `${MONTH_NAMES[month]} ${year}`;
+            const daysInMonth = getDaysInMonthArray();
+
+            let tableHTML = `
+                <table class="w-full border-collapse">
+                    <thead class="bg-gray-100 sticky top-0 z-10">
+                        <tr>
+                            <th class="p-2 border-r border-gray-200 w-40 min-w-[150px] text-left font-semibold text-gray-600 sticky left-0 bg-gray-100 z-20">Date / Employee</th>
+                            ${daysInMonth.map(({ date, day }) => `
+                                <th class="p-2 border-r border-gray-200 min-w-[60px] text-center ${day === 'Sun' ? 'text-red-500' : ''}">
+                                    <div class="font-semibold text-sm">${date}</div>
+                                    <div class="font-normal text-xs text-gray-500">${day}</div>
+                                </th>
+                            `).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${employees.map(employee => `
+                            <tr class="border-t border-gray-200 hover:bg-gray-50">
+                                <td class="p-2 border-r border-gray-200 font-medium text-left sticky left-0 bg-white hover:bg-gray-50 z-10">${employee}</td>
+                                ${daysInMonth.map(({ dateString }) => {
+                                    const dutyCode = duties[`${employee}-${dateString}`];
+                                    const dutyType = dutyTypes.find(d => d.code === dutyCode);
+                                    const bgColor = dutyType ? dutyType.color + '20' : 'transparent';
+                                    const textColor = dutyType ? dutyType.color : 'inherit';
+                                    return `
+                                        <td class="border-r border-gray-200 text-center cursor-pointer h-12 relative cell" 
+                                            style="background-color: ${bgColor};"
+                                            data-employee="${employee}" data-date-string="${dateString}">
+                                            <span class="font-bold text-sm" style="color: ${textColor}; pointer-events: none;">${dutyCode || ''}</span>
+                                        </td>`;
+                                }).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+            rosterGrid.innerHTML = tableHTML;
+        };
+
+        const renderSettings = () => {
+            employeeList.innerHTML = employees.map((emp, index) => `
+                <div class="flex items-center gap-2">
+                    <input type="text" value="${emp}" data-index="${index}" class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 employee-input">
+                    <button data-index="${index}" class="p-2 text-red-500 hover:bg-red-100 rounded-full remove-employee-btn"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                </div>`).join('');
+            dutyTypeList.innerHTML = dutyTypes.map((duty, index) => `
+                 <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center">
+                    <input type="text" placeholder="Code (e.g., M)" value="${duty.code}" data-index="${index}" data-field="code" class="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 duty-type-input">
+                    <input type="text" placeholder="Full Name (e.g., Morning)" value="${duty.name}" data-index="${index}" data-field="name" class="sm:col-span-2 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 duty-type-input">
+                    <div class="flex items-center gap-2">
+                        <input type="color" value="${duty.color}" data-index="${index}" data-field="color" class="w-10 h-10 p-0 border-none rounded-md cursor-pointer duty-type-input">
+                        <span class="text-sm text-gray-600">${duty.color}</span>
+                        <button data-index="${index}" class="p-2 text-red-500 hover:bg-red-100 rounded-full ml-auto remove-duty-type-btn"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                    </div>
+                </div>`).join('');
+        };
+        
+        const renderDutyPopover = () => {
+            dutyPopoverContent.innerHTML = `
+                <h3 class="font-semibold mb-3 text-center">Assign Duty</h3>
+                <div class="grid grid-cols-3 gap-2">
+                    ${dutyTypes.map(duty => `<button class="p-3 rounded-lg text-white font-bold text-sm transition-transform hover:scale-105 duty-select-btn" style="background-color: ${duty.color};" data-code="${duty.code}">${duty.code}</button>`).join('')}
+                    <button class="p-3 rounded-lg bg-gray-200 text-gray-700 font-bold text-sm col-span-3 transition-colors hover:bg-gray-300 duty-select-btn" data-code="null">Clear</button>
+                </div>`;
+        };
+        
+        const renderFollowUpPoints = () => {
+            if (followUpPoints.length === 0) {
+                pointsList.innerHTML = `<li class="text-center text-gray-500 py-4">No points added yet.</li>`;
+                return;
+            }
+            const isViewer = currentUserRole === 'viewer';
+            pointsList.innerHTML = followUpPoints.map(point => `
+                <li class="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border">
+                    <input type="checkbox" data-id="${point.id}" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 point-checkbox" ${point.completed ? 'checked' : ''} ${isViewer ? 'disabled' : ''}>
+                    <span class="flex-grow text-gray-700 ${point.completed ? 'completed-task' : ''}">${point.text}</span>
+                    <button data-id="${point.id}" class="p-1 text-gray-400 hover:text-red-500 rounded-full remove-point-btn ${isViewer ? 'hidden' : ''}">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="pointer-events-none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </li>
+            `).join('');
+        };
+
+        const renderOnDutyNow = () => {
+            const now = new Date();
+            const currentTime = now.getHours() + now.getMinutes() / 60;
+
+            const shiftTimes = {
+                'M': { start: 7.5, end: 16.5 },   // 7:30 AM to 4:30 PM
+                'G1': { start: 9, end: 18 },      // 9:00 AM to 6:00 PM
+                'G2': { start: 11, end: 20 },     // 11:00 AM to 8:00 PM
+                'A': { start: 13.5, end: 24 }     // 1:30 PM to 12:00 AM
+            };
+
+            const todayString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            
+            const onDutyStaff = [];
+            employees.forEach(employee => {
+                const dutyCode = duties[`${employee}-${todayString}`];
+                if (!dutyCode) return;
+
+                const shift = shiftTimes[dutyCode];
+                if (shift && currentTime >= shift.start && currentTime < shift.end) {
+                    const dutyType = dutyTypes.find(d => d.code === dutyCode);
+                    onDutyStaff.push({ name: employee, duty: dutyType });
+                }
+            });
+
+            if (onDutyStaff.length === 0) {
+                onDutyList.innerHTML = `<p class="text-center text-gray-500 py-4">No one is currently on duty.</p>`;
+            } else {
+                onDutyList.innerHTML = onDutyStaff.map(staff => `
+                    <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg border">
+                        <span class="font-bold text-gray-800">${staff.name}</span>
+                        <span class="font-semibold text-white text-xs px-2 py-1 rounded-full" style="background-color: ${staff.duty.color};">${staff.duty.name}</span>
+                    </div>
+                `).join('');
+            }
+        };
+
+        document.getElementById('prev-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); setupDataListener(); });
+        document.getElementById('next-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); setupDataListener(); });
+
+        rosterGrid.addEventListener('click', (e) => {
+            if (currentUserRole !== 'admin') return;
+            if (e.target.classList.contains('cell')) {
+                selectedCell = { employee: e.target.dataset.employee, dateString: e.target.dataset.dateString };
+                renderDutyPopover();
+                dutyPopover.classList.remove('hidden');
+            }
+        });
+
+        dutyPopover.addEventListener('click', (e) => {
+            if (e.target.classList.contains('duty-select-btn')) {
+                const code = e.target.dataset.code === 'null' ? null : e.target.dataset.code;
+                const { employee, dateString } = selectedCell;
+                const key = `${employee}-${dateString}`;
+                duties[key] = code;
+                if(code === null) delete duties[key];
+                updateFirestore({ duties });
+                renderRoster();
+            }
+            dutyPopover.classList.add('hidden');
+            selectedCell = null;
+        });
+
+        document.getElementById('settings-btn').addEventListener('click', () => settingsModal.classList.remove('hidden'));
+        document.getElementById('close-settings-btn').addEventListener('click', () => settingsModal.classList.add('hidden'));
+        settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) { settingsModal.classList.add('hidden'); } });
+        document.getElementById('add-employee-btn').addEventListener('click', () => { employees.push(`Employee ${employees.length + 1}`); updateFirestore({ employees }); render(); });
+
+        employeeList.addEventListener('change', (e) => {
+            if (e.target.classList.contains('employee-input')) {
+                const index = parseInt(e.target.dataset.index, 10), newName = e.target.value, oldName = employees[index];
+                if(oldName === newName || !newName) return;
+                employees[index] = newName;
+                const newDuties = {};
+                Object.keys(duties).forEach(key => { newDuties[key.startsWith(oldName + '-') ? `${newName}-${key.substring(oldName.length + 1)}` : key] = duties[key]; });
+                duties = newDuties;
+                updateFirestore({ employees, duties });
+                render();
+            }
+        });
+
+        employeeList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-employee-btn')) {
+                const index = parseInt(e.target.dataset.index, 10), employeeToRemove = employees[index];
+                employees.splice(index, 1);
+                const newDuties = {};
+                Object.keys(duties).forEach(key => { if (!key.startsWith(employeeToRemove + '-')) newDuties[key] = duties[key]; });
+                duties = newDuties;
+                updateFirestore({ employees, duties });
+                render();
+            }
+        });
+        
+        document.getElementById('add-duty-type-btn').addEventListener('click', () => { dutyTypes.push({ code: 'NEW', color: '#808080', name: 'New Duty' }); updateFirestore({ dutyTypes }); render(); });
+        
+        dutyTypeList.addEventListener('change', (e) => {
+            if (e.target.classList.contains('duty-type-input')) {
+                const index = parseInt(e.target.dataset.index, 10), field = e.target.dataset.field, value = e.target.value, oldCode = dutyTypes[index].code;
+                dutyTypes[index][field] = value;
+                if (field === 'code' && oldCode !== value) {
+                    const newDuties = {};
+                    Object.keys(duties).forEach(key => { newDuties[key] = duties[key] === oldCode ? value : duties[key]; });
+                    duties = newDuties;
+                    updateFirestore({ duties, dutyTypes });
+                } else {
+                    updateFirestore({ dutyTypes });
+                }
+                render();
+            }
+        });
+
+        dutyTypeList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-duty-type-btn')) {
+                const index = parseInt(e.target.dataset.index, 10), dutyToRemove = dutyTypes[index];
+                dutyTypes.splice(index, 1);
+                const newDuties = {};
+                Object.keys(duties).forEach(key => { if (duties[key] !== dutyToRemove.code) newDuties[key] = duties[key]; });
+                duties = newDuties;
+                updateFirestore({ dutyTypes, duties });
+                render();
+            }
+        });
+
+        document.getElementById('add-point-btn').addEventListener('click', () => {
+            const text = newPointInput.value.trim();
+            if (text) {
+                const newPoint = { id: Date.now(), text, completed: false };
+                followUpPoints.push(newPoint);
+                updateFirestore({ followUpPoints });
+                newPointInput.value = '';
+                renderFollowUpPoints();
+            }
+        });
+
+        pointsList.addEventListener('click', (e) => {
+            if (currentUserRole !== 'admin') return;
+            const id = parseInt(e.target.dataset.id, 10);
+            if (e.target.classList.contains('point-checkbox')) {
+                const point = followUpPoints.find(p => p.id === id);
+                if(point) {
+                    point.completed = e.target.checked;
+                    updateFirestore({ followUpPoints });
+                    renderFollowUpPoints();
+                }
+            }
+            if (e.target.classList.contains('remove-point-btn')) {
+                followUpPoints = followUpPoints.filter(p => p.id !== id);
+                updateFirestore({ followUpPoints });
+                renderFollowUpPoints();
+            }
+        });
+
+        const runAutoSchedule = () => {
+            if (employees.length !== 4) {
+                alert("Auto-scheduling requires exactly 4 employees. Please adjust the employee list in settings.");
+                return;
+            }
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const daysInMonthArr = getDaysInMonthArray();
+            const newDuties = {};
+            const availableShifts = ['M', 'G1', 'G2', 'A'];
+            let shiftIndex = 0;
+
+            const [emp1, emp2, emp3, emp4] = employees;
+
+            daysInMonthArr.forEach(day => {
+                const date = new Date(year, month, day.date);
+                const dayOfWeek = date.getDay(); 
+                let workingEmployees = [...employees];
+                
+                if (dayOfWeek === 0) { // Sunday
+                    newDuties[`${emp1}-${day.dateString}`] = 'OFF';
+                    newDuties[`${emp2}-${day.dateString}`] = 'OFF';
+                    newDuties[`${emp3}-${day.dateString}`] = 'M';
+                    newDuties[`${emp4}-${day.dateString}`] = 'A';
+                } else if (dayOfWeek === 1) { // Monday
+                     newDuties[`${emp3}-${day.dateString}`] = 'OFF';
+                     workingEmployees = [emp1, emp2, emp4];
+                     workingEmployees.forEach(emp => {
+                        newDuties[`${emp}-${day.dateString}`] = availableShifts[shiftIndex % availableShifts.length];
+                        shiftIndex++;
+                    });
+                } else if (dayOfWeek === 2) { // Tuesday
+                    newDuties[`${emp4}-${day.dateString}`] = 'OFF';
+                    workingEmployees = [emp1, emp2, emp3];
+                     workingEmployees.forEach(emp => {
+                        newDuties[`${emp}-${day.dateString}`] = availableShifts[shiftIndex % availableShifts.length];
+                        shiftIndex++;
+                    });
+                } else {
+                    workingEmployees.forEach(emp => {
+                        newDuties[`${emp}-${day.dateString}`] = availableShifts[shiftIndex % availableShifts.length];
+                        shiftIndex++;
+                    });
+                }
+            });
+            
+            duties = newDuties;
+            updateFirestore({ duties });
+            render();
+        };
+
+        autoScheduleBtn.addEventListener('click', () => {
+            document.getElementById('confirm-title').textContent = "Auto-schedule Roster";
+            document.getElementById('confirm-message').textContent = "Are you sure? This will overwrite all existing duties for the current month.";
+            confirmModal.classList.remove('hidden');
+        });
+
+        document.getElementById('confirm-cancel-btn').addEventListener('click', () => confirmModal.classList.add('hidden'));
+        document.getElementById('confirm-ok-btn').addEventListener('click', () => {
+            runAutoSchedule();
+            confirmModal.classList.add('hidden');
+        });
+
+        document.getElementById('export-xlsx-btn').addEventListener('click', () => {
+            const head = ['Employee', ...getDaysInMonthArray().map(d => `${d.date}-${d.day}`)];
+            const body = employees.map(emp => [emp, ...getDaysInMonthArray().map(d => duties[`${emp}-${d.dateString}`] || '')]);
+            const title = `Taj Aravali Team IT Duty Roster - ${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+            const dataForSheet = [[title], [], head, ...body];
+            const wb = window.XLSX.utils.book_new();
+            const ws = window.XLSX.utils.aoa_to_sheet(dataForSheet);
+            if (!ws['!merges']) ws['!merges'] = [];
+            ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: head.length - 1 } });
+            ws['!cols'] = head.map((_, i) => ({ wch: i === 0 ? 25 : 10 }));
+            window.XLSX.utils.book_append_sheet(wb, ws, 'Duty Roster');
+            window.XLSX.writeFile(wb, `DutyRoster_${currentDate.getFullYear()}_${MONTH_NAMES[currentDate.getMonth()]}.xlsx`);
+        });
+
+        document.getElementById('export-pdf-btn').addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape' });
+            const daysInMonthArr = getDaysInMonthArray();
+            const head = [[{ content: 'Employee', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } }, ...daysInMonthArr.map(d => d.date.toString())], [...daysInMonthArr.map(d => d.day)]];
+            const body = employees.map(emp => [emp, ...daysInMonthArr.map(d => duties[`${emp}-${d.dateString}`] || '')]);
+            doc.text(`Taj Aravali Team IT Duty Roster - ${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`, 14, 15);
+            const employeeColWidth = 30, margin = 14, availableWidth = doc.internal.pageSize.getWidth() - (margin * 2) - employeeColWidth, dateColWidth = availableWidth / daysInMonthArr.length;
+            const columnStyles = { 0: { halign: 'left', fontStyle: 'bold', cellWidth: employeeColWidth } };
+            for (let i = 1; i <= daysInMonthArr.length; i++) { columnStyles[i] = { cellWidth: dateColWidth }; }
+            doc.autoTable({
+                head, body, startY: 22, theme: 'grid', margin: { left: margin, right: margin },
+                styles: { fontSize: 8, halign: 'center', valign: 'middle' },
+                headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
+                columnStyles,
+                didDrawCell: (data) => {
+                    if (data.section === 'body' && data.column.index > 0) {
+                        const dutyCode = data.cell.raw?.toString().trim();
+                        if (!dutyCode) return;
+                        const dutyType = dutyTypes.find(d => d.code === dutyCode);
+                        if (dutyType) {
+                            doc.setFillColor(dutyType.color);
+                            doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
+                            const textColor = dutyType.code === 'OFF' ? '#000000' : '#FFFFFF';
+                            doc.setTextColor(textColor);
+                            doc.setFont(undefined, 'bold');
+                            doc.text(dutyCode, data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2, { align: 'center', baseline: 'middle' });
+                        }
+                    }
+                }
+            });
+            doc.save(`DutyRoster_${currentDate.getFullYear()}_${MONTH_NAMES[currentDate.getMonth()]}.pdf`);
+        });
+
+        const getDaysInMonthArray = () => {
+            const year = currentDate.getFullYear(), month = currentDate.getMonth(), daysCount = getDaysInMonth(year, month);
+            return Array.from({ length: daysCount }, (_, i) => {
+                const date = new Date(year, month, i + 1);
+                return { date: i + 1, day: DAYS_OF_WEEK[date.getDay()], dateString: `${year}-${String(month + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}` };
+            });
+        }
+
+        let unsubscribeFromRoster;
+        const setupDataListener = () => {
+            if (unsubscribeFromRoster) unsubscribeFromRoster();
+            const year = currentDate.getFullYear(), month = currentDate.getMonth();
+            rosterDocId = `${year}-${month + 1}`;
+            const rosterRef = doc(db, `artifacts/${appId}/public/data/duty-rosters`, rosterDocId);
+            unsubscribeFromRoster = onSnapshot(rosterRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    employees = data.employees || ['Khushwant', 'Kunal', 'Suryaveer', 'Sahil'];
+                    dutyTypes = data.dutyTypes || [{ code: 'M', color: '#3b82f6', name: 'Morning' }, { code: 'G1', color: '#22c55e', name: 'General 1' }, { code: 'G2', color: '#8b5cf6', name: 'General 2' }, { code: 'A', color: '#f97316', name: 'Afternoon' }, { code: 'OFF', color: '#6b7280', name: 'Off' }];
+                    duties = data.duties || {};
+                    followUpPoints = data.followUpPoints || [];
+                } else {
+                    employees = ['Khushwant', 'Kunal', 'Suryaveer', 'Sahil'];
+                    dutyTypes = [{ code: 'M', color: '#3b82f6', name: 'Morning' }, { code: 'G1', color: '#22c55e', name: 'General 1' }, { code: 'G2', color: '#8b5cf6', name: 'General 2' }, { code: 'A', color: '#f97316', name: 'Afternoon' }, { code: 'OFF', color: '#6b7280', name: 'Off' }];
+                    duties = {};
+                    followUpPoints = [];
+                    updateFirestore({});
+                }
+                render();
+            }, (error) => { console.error("Error fetching roster:", error); });
+        };
+
+        const initializeAppAndAuth = () => {
+             const firebaseConfig = {
+              apiKey: "AIzaSyCWdgyMjNUs2P1ULFLMqjIQWFUTgm7D4jQ",
+              authDomain: "duty-roster-95994.firebaseapp.com",
+              projectId: "duty-roster-95994",
+              storageBucket: "duty-roster-95994.firebasestorage.app",
+              messagingSenderId: "781776020022",
+              appId: "1:781776020022:web:a8dc647b383d53d71fee97",
+              measurementId: "G-XRF9TJPCZR"
+            };
+            appId = "duty-roster-95994";
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        const adminEmail = "rao@gmail.com";
+                        currentUserRole = user.email === adminEmail ? 'admin' : 'viewer';
+                        
+                        loadingSpinner.classList.add('hidden');
+                        loginPage.classList.add('hidden');
+                        appPage.classList.remove('hidden');
+                        
+                        setupDataListener();
+                        if (onDutyInterval) clearInterval(onDutyInterval);
+                        onDutyInterval = setInterval(renderOnDutyNow, 60000);
+                    } else {
+                        currentUserRole = null;
+                        loadingSpinner.classList.add('hidden');
+                        appPage.classList.add('hidden');
+                        loginPage.classList.remove('hidden');
+                        loginPage.classList.add('flex'); // Make sure it's visible
+                        if (unsubscribeFromRoster) unsubscribeFromRoster();
+                        if (onDutyInterval) clearInterval(onDutyInterval);
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                rosterGrid.innerHTML = `<div class="p-4 text-red-600 bg-red-100 rounded-lg">Error: Could not connect to the database. Firebase initialization failed.</div>`;
+            }
+        };
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loginError.textContent = '';
+            const email = loginForm.email.value;
+            const password = loginForm.password.value;
+            try {
+                await setPersistence(auth, browserSessionPersistence);
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                console.error("Login failed:", error.code);
+                loginError.textContent = "Login failed. Please check your email and password.";
+            }
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth);
+        });
+        
+        const loadScript = (src) => new Promise((resolve, reject) => {
+            if (document.querySelector(`script[src="${src}"]`)) return resolve();
+            const script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+
+        // Initialize App on first load
+        initializeAppAndAuth();
+
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')
+            .then(() => loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'))
+            .then(() => loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js'))
+            .then(() => {
+                document.getElementById('xlsx-btn-text').textContent = 'Export XLSX';
+                document.getElementById('pdf-btn-text').textContent = 'Export PDF';
+                document.getElementById('export-xlsx-btn').disabled = false;
+                document.getElementById('export-pdf-btn').disabled = false;
+            })
+            .catch(err => console.error("Failed to load export libraries", err));
+    </script>
+</body>
+</html>
